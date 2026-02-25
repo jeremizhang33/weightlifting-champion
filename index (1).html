@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>大明王朝1566：宦海浮沉 - RPG重生模拟器</title>
+    <style>
+        :root {
+            --bg-dark: #1a1410;
+            --bg-card: rgba(30, 25, 20, 0.95);
+            --text-light: #e8e0d0;
+            --text-gold: #d4a857;
+            --text-grey: #a89f8f;
+            --vermilion: #b22c2c;
+            --imperial-gold: #d4a857;
+            --border-gold: #c5a059;
+            --legendary: #ff7f00;
+            --epic: #a335ee;
+            --rare: #0070dd;
+            --common: #9d9d9d;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: "Noto Serif SC", "Songti SC", "SimSun", serif;
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            line-height: 1.8;
+            min-height: 100vh;
+        }
+        .container { max-width: 1000px; margin: 0 auto; padding: 20px; }
+        .screen { display: none; animation: fadeIn 0.5s; }
+        .screen.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .title { text-align: center; padding: 40px 20px; border-bottom: 3px double var(--border-gold); margin-bottom: 30px; }
+        .title h1 { font-size: 2.5rem; color: var(--text-gold); margin-bottom: 15px; letter-spacing: 6px; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
+        .title .subtitle { font-size: 1.1rem; color: var(--text-grey); border: 1px solid var(--border-gold); display: inline-block; padding: 8px 25px; background: rgba(30,25,20,0.8); }
+        .btn {
+            background: linear-gradient(135deg, var(--vermilion) 0%, #8b1f1f 100%);
+            color: #fff; border: 2px solid var(--border-gold); padding: 12px 30px;
+            font-size: 1rem; font-family: inherit; cursor: pointer; border-radius: 4px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.4); transition: all 0.3s; margin: 8px;
+        }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 12px rgba(178,44,44,0.6); }
+        .btn-secondary { background: linear-gradient(135deg, var(--imperial-gold) 0%, #a67c3a 100%); }
+        .card {
+            background: var(--bg-card); border: 2px solid var(--border-gold); padding: 20px;
+            border-radius: 6px; margin-bottom: 15px; cursor: pointer; transition: all 0.3s;
+        }
+        .card:hover { transform: translateY(-3px); box-shadow: 0 6px 15px rgba(212,168,87,0.3); border-color: var(--text-gold); }
+        .card.selected { border-color: var(--vermilion); border-width: 3px; background: linear-gradient(135deg, rgba(178,44,44,0.15) 0%, var(--bg-card) 100%); }
+        .card h3 { font-size: 1.3rem; color: var(--text-gold); margin-bottom: 10px; border-bottom: 1px solid var(--border-gold); padding-bottom: 8px; }
+        .card p { color: var(--text-grey); font-size: 0.95rem; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 25px; }
+        .stat-row { display: flex; align-items: center; margin-bottom: 8px; }
+        .stat-name { width: 60px; font-weight: bold; color: var(--text-gold); font-size: 0.9rem; }
+        .stat-bar-container { flex-grow: 1; height: 12px; background: rgba(0,0,0,0.5); border-radius: 6px; margin: 0 10px; border: 1px solid var(--border-gold); overflow: hidden; }
+        .stat-bar { height: 100%; background: linear-gradient(90deg, var(--imperial-gold), #f0d98f, var(--imperial-gold)); transition: width 0.5s; }
+        .stat-value { width: 35px; text-align: right; font-weight: bold; font-size: 0.9rem; }
+        .talent-tag { display: inline-block; padding: 5px 12px; border-radius: 4px; color: #fff; font-size: 0.85rem; margin: 4px; border: 1px solid rgba(255,255,255,0.3); }
+        .talent-legendary { background: linear-gradient(135deg, var(--legendary), #cc6600); }
+        .talent-epic { background: linear-gradient(135deg, var(--epic), #7a28b8); }
+        .talent-rare { background: linear-gradient(135deg, var(--rare), #0056a8); }
+        .talent-common { background: linear-gradient(135deg, var(--common), #6e6e6e); }
+        .game-layout { display: grid; grid-template-columns: 280px 1fr; gap: 20px; }
+        .sidebar { background: var(--bg-card); border: 2px solid var(--border-gold); padding: 20px; border-radius: 6px; height: fit-content; position: sticky; top: 20px; }
+        .sidebar h3, .sidebar h4 { color: var(--text-gold); border-bottom: 1px solid var(--border-gold); padding-bottom: 6px; margin-bottom: 12px; font-size: 1rem; }
+        .main-content { background: var(--bg-card); border: 2px solid var(--border-gold); padding: 25px; border-radius: 6px; min-height: 500px; }
+        .event-box { border: 2px double var(--vermilion); padding: 25px; margin-bottom: 20px; background: linear-gradient(135deg, rgba(178,44,44,0.08) 0%, transparent 100%); border-radius: 4px; }
+        .event-title { font-size: 1.5rem; color: var(--vermilion); margin-bottom: 15px; text-align: center; letter-spacing: 3px; }
+        .event-desc { font-size: 1.05rem; line-height: 2; margin-bottom: 20px; text-indent: 2em; }
+        .choice-box { border: 1px solid var(--border-gold); padding: 15px; margin-bottom: 12px; cursor: pointer; transition: all 0.3s; background: rgba(0,0,0,0.2); border-radius: 4px; }
+        .choice-box:hover { background: linear-gradient(135deg, rgba(212,168,87,0.15) 0%, rgba(0,0,0,0.2) 100%); transform: translateX(5px); border-color: var(--text-gold); }
+        .choice-box.disabled { opacity: 0.4; cursor: not-allowed; }
+        .choice-title { font-weight: bold; color: var(--text-gold); margin-bottom: 5px; }
+        .choice-effect { font-size: 0.85rem; color: #8fb4d4; }
+        .ending-box { text-align: center; padding: 40px; }
+        .ending-title { font-size: 2.2rem; color: var(--vermilion); margin-bottom: 25px; border: 2px double var(--border-gold); padding: 20px; letter-spacing: 4px; }
+        .ending-desc { font-size: 1.1rem; line-height: 2; margin-bottom: 30px; text-align: left; text-indent: 2em; }
+        .log-container { max-height: 300px; overflow-y: auto; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 4px; margin-bottom: 20px; }
+        .log-item { padding: 8px 0; border-bottom: 1px dashed rgba(212,168,87,0.3); font-size: 0.95rem; }
+        .log-item:last-child { border-bottom: none; }
+        .log-age { color: var(--text-gold); font-weight: bold; }
+        .info-text { text-align: center; color: var(--text-grey); margin: 20px 0; }
+        @media (max-width: 768px) {
+            .game-layout { grid-template-columns: 1fr; }
+            .sidebar { position: static; }
+            .title h1 { font-size: 1.8rem; letter-spacing: 3px; }
+            .grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div id="startScreen" class="screen active">
+        <div class="title">
+            <h1>大明王朝1566</h1>
+            <div class="subtitle">宦海浮沉 · 重生模拟器</div>
+            <p style="margin-top:20px;color:var(--text-grey)">嘉靖四十五年，风云变幻，你将如何在这宦海中浮沉？</p>
+        </div>
+        <div style="text-align:center">
+            <button class="btn" onclick="startGame()">开始重生</button>
+            <div class="info-text">重生点数: <span id="rebirthPoints" style="color:var(--text-gold);font-weight:bold">0</span></div>
+        </div>
+    </div>
+    <div id="identityScreen" class="screen">
+        <div class="title"><h1>选择身份</h1></div>
+        <div class="grid" id="identityGrid"></div>
+        <div style="text-align:center"><button class="btn" onclick="confirmIdentity()">确认选择</button></div>
+    </div>
+    <div id="talentScreen" class="screen">
+        <div class="title"><h1>抽取天赋</h1><div class="subtitle">命运赐予你以下天赋</div></div>
+        <div id="talentList" style="text-align:center;margin-bottom:25px"></div>
+        <div style="text-align:center">
+            <button class="btn btn-secondary" onclick="refreshTalents()">刷新天赋(10点)</button>
+            <button class="btn" onclick="confirmTalents()">确认天赋</button>
+        </div>
+    </div>
+    <div id="gameScreen" class="screen">
+        <div class="game-layout">
+            <div class="sidebar">
+                <h3>角色状态</h3>
+                <div style="margin-bottom:12px"><strong style="color:var(--text-gold)">身份：</strong><span id="playerIdentity"></span><br><strong style="color:var(--text-gold)">年龄：</strong><span id="playerAge"></span>岁</div>
+                <div id="attributesPanel"></div>
+                <h4 style="margin-top:15px">派系声望</h4>
+                <div id="factionsPanel"></div>
+                <h4 style="margin-top:15px">天赋</h4>
+                <div id="talentsPanel"></div>
+            </div>
+            <div class="main-content" id="eventContent"></div>
+        </div>
+    </div>
+    <div id="endingScreen" class="screen">
+        <div class="ending-box">
+            <div class="ending-title" id="endingTitle"></div>
+            <div class="ending-desc" id="endingDesc"></div>
+            <div class="log-container" id="lifeLog"></div>
+            <div class="info-text">获得重生点数: <span id="earnedPoints" style="color:var(--vermilion);font-size:1.5rem;font-weight:bold"></span></div>
+            <button class="btn" onclick="restartGame()">再来一次</button>
+        </div>
+    </div>
+</div>
+<script>
+const GameData={identities:[{id:'scholar',name:'寒门士子',desc:'出身贫寒，通过科举入仕的读书人',attrs:{INT:60,CLN:55,POL:20,POP:30,PHY:40,FAM:10,LOY:45},factions:{yan:0,qing:10,sili:0}},{id:'aristocrat',name:'世家子弟',desc:'官宦世家出身，自幼耳濡目染',attrs:{INT:45,CLN:30,POL:40,POP:25,PHY:35,FAM:70,LOY:30},factions:{yan:10,qing:5,sili:0}},{id:'eunuch',name:'内廷宦官',desc:'净身入宫的太监，在司礼监谋生',attrs:{INT:35,CLN:15,POL:50,POP:10,PHY:25,FAM:5,LOY:60},factions:{yan:5,qing:-5,sili:15}},{id:'merchant',name:'江南商贾',desc:'经营丝绸生意的商人家庭',attrs:{INT:40,CLN:20,POL:35,POP:20,PHY:30,FAM:50,LOY:15},factions:{yan:15,qing:-10,sili:10}},{id:'peasant',name:'浙江农户',desc:'改稻为桑政策下的受害百姓',attrs:{INT:25,CLN:40,POL:10,POP:50,PHY:55,FAM:5,LOY:20},factions:{yan:-10,qing:10,sili:0}}],
+talents:[{id:'t1',name:'海瑞之志',rarity:'legendary',prob:0.02,effects:{CLN:30,POL:-20,POP:15},factions:{qing:20}},{id:'t2',name:'严嵩之智',rarity:'legendary',prob:0.02,effects:{INT:25,POL:20,CLN:-30},factions:{yan:20}},{id:'t3',name:'嘉靖之术',rarity:'legendary',prob:0.02,effects:{INT:15,POL:15,LOY:10}},{id:'t4',name:'胡公遗风',rarity:'legendary',prob:0.02,effects:{INT:15,LOY:20,PHY:10}},{id:'t5',name:'吕芳之道',rarity:'epic',prob:0.05,effects:{LOY:20,POL:15},factions:{sili:15}},{id:'t6',name:'沈一石之财',rarity:'epic',prob:0.05,effects:{FAM:25,INT:10}},{id:'t7',name:'戚家军魂',rarity:'epic',prob:0.05,effects:{PHY:25,POP:15}},{id:'t8',name:'清流砥柱',rarity:'epic',prob:0.05,effects:{CLN:20,INT:10},factions:{qing:20}},{id:'t9',name:'严党干将',rarity:'epic',prob:0.05,effects:{POL:20,FAM:10},factions:{yan:20}},{id:'t10',name:'司礼监宠儿',rarity:'epic',prob:0.05,effects:{LOY:15,POL:10},factions:{sili:20}},{id:'t11',name:'书香门第',rarity:'rare',prob:0.1,effects:{INT:15}},{id:'t12',name:'农家子弟',rarity:'rare',prob:0.1,effects:{PHY:10,POP:10}},{id:'t13',name:'商贾世家',rarity:'rare',prob:0.1,effects:{FAM:15}},{id:'t14',name:'将门虎子',rarity:'rare',prob:0.1,effects:{PHY:15}},{id:'t15',name:'宦官世家',rarity:'rare',prob:0.1,effects:{POL:10,LOY:10}},{id:'t16',name:'命硬',rarity:'rare',prob:0.1,effects:{PHY:20}},{id:'t17',name:'贵人相助',rarity:'rare',prob:0.1,effects:{FAM:10}},{id:'t18',name:'察言观色',rarity:'rare',prob:0.1,effects:{INT:10,POL:5}},{id:'t19',name:'体弱多病',rarity:'common',prob:0.2,effects:{PHY:-15}},{id:'t20',name:'贪墨成性',rarity:'common',prob:0.2,effects:{POL:10,CLN:-20}},{id:'t21',name:'迂腐不化',rarity:'common',prob:0.2,effects:{CLN:15,POL:-15}},{id:'t22',name:'优柔寡断',rarity:'common',prob:0.2,effects:{POL:-5}},{id:'t23',name:'口无遮拦',rarity:'common',prob:0.2,effects:{POP:-5}},{id:'t24',name:'运气平平',rarity:'common',prob:0.2,effects:{}},{id:'t25',name:'相貌平平',rarity:'common',prob:0.2,effects:{}},{id:'t26',name:'资质平庸',rarity:'common',prob:0.2,effects:{INT:-5}}],
+events:[
+{id:'M001',name:'嘉靖修道',age:[20,25],desc:'嘉靖帝沉迷修道，二十五年不上朝，朝政由严嵩把持。你初入官场，该如何应对？',choices:[{text:'专心科举，不问朝局',effects:{INT:5,CLN:3}},{text:'关注朝局，暗中观察',effects:{INT:8,POL:5}},{text:'修身养性，韬光养晦',effects:{PHY:5,LOY:3}}]},
+{id:'M002',name:'国库空虚',age:[22,27],desc:'国库入不敷出，倭患频仍，嘉靖帝需要银子修宫殿。朝廷上下议论纷纷，你的态度是？',choices:[{text:'上疏建言节俭',req:{CLN:40},effects:{CLN:10,POP:5,yan:-5,qing:10}},{text:'韬光养晦，明哲保身',effects:{POL:5}},{text:'趁机敛财，中饱私囊',req:{POL:30},effects:{FAM:15,CLN:-10,yan:10}}]},
+{id:'M003',name:'改稻为桑国策',age:[25,30],desc:'为解决财政危机，朝廷推行改稻为桑国策。浙江百姓怨声载道，田地被强征改种桑树，民不聊生。你的态度是？',choices:[{text:'支持国策，积极推行',effects:{POL:10,POP:-10,yan:15}},{text:'反对国策，为民请命',req:{CLN:50},effects:{CLN:10,POP:15,yan:-15,qing:15}},{text:'观望态度，随波逐流',effects:{POL:3}}]},
+{id:'M004',name:'浙江赴任',age:[26,32],desc:'你被派往浙江任职，亲眼目睹改稻为桑带来的民生凋敝。百姓流离失所，哀鸿遍野。',choices:[{text:'秉公执法，不畏权贵',req:{CLN:50},effects:{CLN:15,POP:10,yan:-10,qing:10}},{text:'与官绅勾结，中饱私囊',req:{POL:40},effects:{FAM:20,CLN:-15,yan:15}},{text:'明哲保身，得过且过',effects:{POL:5}}]},
+{id:'M005',name:'严世蕃密信',age:[28,35],desc:'你收到严世蕃的密信，信中要求你配合毁堤淹田计划，以便低价收购土地。这是一个危险的抉择。',choices:[{text:'拒绝配合，保持清白',req:{CLN:50},effects:{CLN:10,yan:-20,qing:10}},{text:'假意应允，暗中观察',req:{INT:50},effects:{INT:5,POL:10}},{text:'积极参与，谋取私利',req:{POL:50},effects:{FAM:25,CLN:-20,yan:20}}]},
+{id:'M006',name:'毁堤淹田',age:[30,38],desc:'嘉靖四十年端午，新安江水位暴涨。你收到密报：郑泌昌、何茂才计划于今夜掘开九县堤坝，人为制造水灾。数十万百姓的命运，此刻握在你的手中。',choices:[{text:'连夜赶往大堤，向胡宗宪告密',req:{CLN:50},effects:{CLN:10,POL:-5,yan:-20,qing:15}},{text:'保持沉默，静观其变',effects:{POL:5}},{text:'参与毁堤，谋取私利',req:{POL:60},effects:{FAM:20,CLN:-20,yan:10}}]},
+{id:'M007',name:'胡宗宪抗洪',age:[30,38],desc:'胡宗宪率军分流救灾，洪水滔天，百姓哀嚎。你的立场至关重要。',choices:[{text:'协助救灾，赈济百姓',effects:{POP:15,PHY:-5,CLN:5}},{text:'袖手旁观，明哲保身',effects:{POL:3}},{text:'趁乱牟利，发国难财',req:{POL:50},effects:{FAM:15,CLN:-15,POP:-10}}]},
+{id:'M008',name:'织造局风波',age:[32,40],desc:'杨金水装疯，沈一石被抄家，织造局风雨飘摇。沈一石临死前留下账册，记录了严党多年来的贪腐证据。',choices:[{text:'救助沈一石，仗义疏财',req:{FAM:40},effects:{FAM:-10,POP:10,yan:-10}},{text:'落井下石，趁机敛财',req:{POL:50},effects:{FAM:15,CLN:-10,yan:10}},{text:'置身事外，明哲保身',effects:{POL:3}}]},
+{id:'M009',name:'郑何落网',age:[35,42],desc:'郑泌昌、何茂才东窗事发，被押解进京。严党根基动摇，朝野震动。',choices:[{text:'提供证据，揭发严党',req:{CLN:50},effects:{CLN:10,yan:-25,qing:20}},{text:'销毁证据，保护严党',req:{yan:30},effects:{yan:15,qing:-15}},{text:'静观其变，不表态',effects:{POL:5}}]},
+{id:'M010',name:'清流弹劾',age:[38,45],desc:'清流发起对严党的总攻，徐阶、高拱、张居正联名上疏弹劾严嵩父子。朝堂之上，刀光剑影。你必须表态。',choices:[{text:'联名弹劾严党',req:{CLN:50},effects:{CLN:10,yan:-30,qing:25}},{text:'为严党辩护',req:{yan:40},effects:{yan:20,qing:-25}},{text:'保持中立',effects:{POL:5}}]},
+{id:'M011',name:'严嵩倒台',age:[40,48],desc:'嘉靖四十三年，严嵩被罢免，严世蕃被斩首。二十年权倾朝野的严党一朝覆灭。你该如何自处？',choices:[{text:'落井下石，清算严党',effects:{qing:20,yan:-40}},{text:'明哲保身，不参与',effects:{POL:5}},{text:'为严党求情，冒险相救',req:{yan:50},effects:{yan:30,qing:-30,LOY:10}}]},
+{id:'M012',name:'徐阶掌权',age:[42,50],desc:'徐阶成为首辅，清流掌权，朝局重新洗牌。新的时代开始了。',choices:[{text:'投靠徐阶，加入清流',req:{CLN:40},effects:{qing:25,POL:10}},{text:'保持独立，不站队',effects:{POL:5}},{text:'蛰伏待机，暗中积蓄',effects:{INT:5,POL:5}}]},
+{id:'M013',name:'海瑞上疏',age:[45,55],desc:'海瑞上《治安疏》直斥嘉靖帝"嘉靖嘉靖，家家皆净"，震动朝野。嘉靖帝震怒，海瑞被下狱。你的态度是？',choices:[{text:'附议支持，共同直谏',req:{CLN:70},effects:{CLN:15,POP:10,qing:20,LOY:-10}},{text:'保持沉默，明哲保身',effects:{POL:3}},{text:'弹劾海瑞，维护君威',req:{LOY:60},effects:{LOY:10,qing:-20}}]},
+{id:'M014',name:'嘉靖驾崩',age:[50,60],desc:'嘉靖帝驾崩，裕王即位，是为隆庆帝。一个时代结束了，新的时代开始。',choices:[{text:'拥立有功，积极表态',effects:{LOY:10,POL:10}},{text:'观望态度，谨慎应对',effects:{POL:5}},{text:'消极应对，准备退隐',effects:{INT:5}}]},
+{id:'M015',name:'结局审判',age:[55,70],desc:'你的一生即将结束，接受命运的最终审判。回首往事，你是否有所遗憾？',choices:[]},
+{id:'C001',name:'初入京城',age:[20,25],desc:'你初入京城，官场之上，派系林立，暗流涌动。严党势大，清流蛰伏，司礼监居中制衡。一步踏错便可能万劫不复。',choices:[{text:'拜访严阁老门生，寻求庇护',effects:{POL:5,CLN:-5,yan:10,qing:-5}},{text:'结交清流官员，探听虚实',effects:{INT:5,CLN:5,qing:10,yan:-5}},{text:'保持中立，静观其变',effects:{INT:3}}]},
+{id:'C002',name:'严党宴请',age:[22,30],desc:'你受邀参加严党核心成员的宴请，席间觥筹交错，歌舞升平。严世蕃言语轻佻，却句句不离利益交换。他暗示你若能为严党效力，荣华富贵唾手可得。',choices:[{text:'收下银票，成为严党一员',effects:{FAM:15,CLN:-15,POL:10,yan:20,qing:-10}},{text:'婉言谢绝，称病离席',effects:{CLN:5,POL:-5,yan:-10}}]},
+{id:'C003',name:'清流夜谈',age:[22,30],desc:'你受邀与几位清流官员夜谈，他们忧国忧民，对时弊痛心疾首。张居正慷慨陈词："这大明的天下，是朱家的天下，更是天下人的天下！"',choices:[{text:'接受清流邀请，共谋大事',effects:{CLN:15,INT:5,POL:-5,qing:20,yan:-10}},{text:'表示赞同，但暂不站队',effects:{INT:3,qing:5}}]},
+{id:'C004',name:'司礼监差事',age:[25,35],desc:'吕芳派你负责宫廷采办。你需要周旋于各方势力之间，为司礼监打探消息。在皇帝身边，忠诚与谨慎才是生存之道。',choices:[{text:'忠心耿耿为司礼监办事',effects:{LOY:20,POL:5,sili:25}},{text:'利用资源，暗中培植势力',effects:{POL:15,INT:5,LOY:-10,sili:10}}]},
+{id:'C005',name:'弹劾风波',age:[30,40],desc:'朝堂之上，清流与严党围绕一桩贪腐案展开激烈交锋。高拱怒斥严党祸国殃民，严世蕃冷笑反击。你被卷入其中，必须表态。',choices:[{text:'支持清流弹劾',effects:{CLN:10,POL:-5,qing:15,yan:-15}},{text:'为严党辩护',effects:{POL:10,CLN:-10,yan:15,qing:-15}},{text:'称病不出，避免表态',effects:{INT:5}}]},
+{id:'C006',name:'裕王府做客',age:[28,38],desc:'你受邀到裕王府做客。裕王朱载坖温文尔雅，身边簇拥着高拱、张居正等清流骨干。这是一个难得的机会。',choices:[{text:'表明立场，效忠裕王',effects:{LOY:10,qing:15}},{text:'谨言慎行，不表态',effects:{INT:5,POL:5}}]},
+{id:'C007',name:'吕芳教诲',age:[25,40],desc:'吕芳将你叫到偏殿，语重心长地说："在这紫禁城里，最重要的不是聪明，而是忠诚。皇上看重的，是能为他分忧的人。"',choices:[{text:'谨记教诲，忠心侍主',effects:{LOY:15,sili:10}},{text:'虚与委蛇，另有打算',effects:{POL:10,INT:5}}]},
+{id:'C008',name:'陈洪崛起',age:[35,50],desc:'陈洪野心勃勃，开始在司礼监中排挤吕芳的势力。他向你抛出橄榄枝，许以高位。',choices:[{text:'投靠陈洪，共谋大事',effects:{POL:15,LOY:-10,sili:10}},{text:'保持忠诚，婉言谢绝',effects:{LOY:10,sili:-5}},{text:'两面逢源，暗中观望',effects:{INT:5,POL:5}}]},
+{id:'E001',name:'乡试备考',age:[20,25],desc:'你出身寒门，自幼苦读诗书，如今已到乡试之年。你每日挑灯夜读，废寝忘食，只为金榜题名，光宗耀祖。',choices:[{text:'刻苦攻读，坚信真才实学',effects:{INT:10,PHY:-5}},{text:'寻求名师指点，广结人脉',effects:{INT:5,FAM:5}},{text:'打点考官，以求稳妥',effects:{CLN:-10,POL:5,yan:5}}]},
+{id:'E002',name:'乡试放榜',age:[20,25],desc:'乡试放榜之日，贡院门前人山人海。你焦急地在榜单上寻找自己的名字，心情忐忑不安。',choices:[{text:'金榜题名，成为举人',effects:{INT:15,POP:10,qing:5}},{text:'名落孙山，再战来年',effects:{INT:5,PHY:-5}}]},
+{id:'E003',name:'会试竞争',age:[25,30],desc:'你成功通过乡试，获得参加会试的资格。会试在京城举行，来自全国各地的精英齐聚一堂，竞争异常激烈。',choices:[{text:'闭门苦读，专心应试',effects:{INT:15,PHY:-5}},{text:'拜访座师，寻求提携',effects:{INT:5,FAM:10,qing:5}}]},
+{id:'E004',name:'殿试面圣',age:[25,32],desc:'你通过会试，获得参加殿试的资格。殿试由皇帝亲自主持，这是你人生中最重要的时刻。面对嘉靖帝的提问，你该如何作答？',choices:[{text:'直言时弊，痛陈改革',req:{CLN:50},effects:{CLN:10,INT:5,qing:10,yan:-5}},{text:'歌功颂德，取悦圣上',effects:{LOY:10,POL:5}},{text:'中规中矩，稳妥作答',effects:{INT:5}}]},
+{id:'E005',name:'翰林编修',age:[26,35],desc:'你被选为翰林院编修，负责修撰国史、起草诏书。翰林院是清流的大本营，也是通往内阁的必经之路。',choices:[{text:'埋头苦干，积累资历',effects:{INT:10,CLN:5}},{text:'结交同僚，广交人脉',effects:{FAM:10,qing:10}}]},
+{id:'B001',name:'丝绸生意',age:[22,35],desc:'你家经营丝绸生意，如今正值改稻为桑之际，桑蚕价格飞涨。这是一个难得的商机，但也暗藏风险。',choices:[{text:'扩大经营，趁机牟利',effects:{FAM:20,CLN:-10}},{text:'稳健经营，规避风险',effects:{FAM:10,INT:5}},{text:'接济灾民，散财积德',effects:{FAM:-10,POP:15,CLN:10}}]},
+{id:'B002',name:'沈一石结交',age:[25,40],desc:'你结识了江南首富沈一石。他亦商亦儒，富可敌国，却深陷官场漩涡。他向你吐露心声："我这一生，不过是为他人做嫁衣裳。"',choices:[{text:'与沈一石深交，共谋大事',effects:{FAM:15,INT:10,yan:10}},{text:'保持距离，明哲保身',effects:{INT:5}}]},
+{id:'B003',name:'盐引风波',age:[28,42],desc:'你获得了一批盐引，可以大赚一笔。但盐引的来源不甚清白，可能牵涉严党的贪腐案。',choices:[{text:'低调出手，快速变现',effects:{FAM:25,CLN:-15}},{text:'上交官府，明哲保身',effects:{CLN:10,FAM:-5}},{text:'暗中调查，掌握把柄',effects:{INT:10,POL:10}}]},
+{id:'W001',name:'倭寇来袭',age:[25,40],desc:'倭寇大举进犯浙江沿海，烧杀抢掠，百姓遭殃。朝廷急调戚继光、俞大猷率军抗倭。',choices:[{text:'投笔从戎，参军抗倭',effects:{PHY:15,POP:10,LOY:10}},{text:'捐资助饷，支援前线',effects:{FAM:-10,POP:10}},{text:'避难内地，明哲保身',effects:{POL:5}}]},
+{id:'W002',name:'戚继光募兵',age:[26,42],desc:'戚继光在浙江募兵，组建戚家军。他亲自挑选精壮农民，严格训练，军纪严明。你是否加入？',choices:[{text:'投身戚家军，建功立业',effects:{PHY:20,POP:15,LOY:15}},{text:'协助募兵，后方支援',effects:{POP:10,FAM:-5}}]},
+{id:'W003',name:'海战大捷',age:[28,45],desc:'戚继光、俞大猷联合作战，在海上大败倭寇。捷报传来，朝野振奋。',choices:[{text:'上疏请功，为将士请赏',effects:{POP:10,qing:10}},{text:'借机敛财，中饱私囊',effects:{FAM:15,CLN:-15}}]},
+{id:'F001',name:'婚姻联姻',age:[22,30],desc:'你到了成婚的年纪。媒人穿梭往来，带来几个婚配的选择。',choices:[{text:'娶官宦之女，攀附权贵',effects:{FAM:15,POL:10}},{text:'娶书香门第，志同道合',effects:{INT:10,CLN:5}},{text:'娶商贾之女，家财万贯',effects:{FAM:20}}]},
+{id:'F002',name:'纳妾风波',age:[30,45],desc:'你的正妻多年无子，家中长辈催促你纳妾延续香火。',choices:[{text:'纳妾延嗣，遵从孝道',effects:{FAM:5,POP:-5}},{text:'拒绝纳妾，夫妻同心',effects:{CLN:5,LOY:5}}]},
+{id:'F003',name:'子嗣传承',age:[35,50],desc:'你终于有了儿子。他聪颖过人，但也顽皮调皮。你打算如何教育他？',choices:[{text:'严格管教，望子成龙',effects:{INT:5,FAM:5}},{text:'顺其自然，快乐成长',effects:{POP:5}}]},
+{id:'R001',name:'偶遇贵人',age:[20,35],desc:'你在街上偶遇一位相貌不凡的老者。他上下打量你一番，说："此子骨骼清奇，日后必成大器。"',choices:[{text:'虚心请教，拜师学艺',effects:{INT:10}},{text:'礼貌道谢，继续赶路',effects:{}}]},
+{id:'R002',name:'江湖侠客',age:[22,40],desc:'你在酒楼偶遇一位江湖侠客，他行侠仗义，路见不平拔刀相助。他向你讲述了许多江湖趣事。',choices:[{text:'结交侠客，广交朋友',effects:{PHY:5,POP:10}},{text:'敬而远之，避免麻烦',effects:{POL:3}}]},
+{id:'R003',name:'红颜知己',age:[25,40],desc:'你在青楼偶遇一位才女，她琴棋书画样样精通，谈吐不凡。你们一见如故，相谈甚欢。',choices:[{text:'赎身纳妾，共度余生',effects:{FAM:-15,INT:5,POP:-5}},{text:'知己相交，不越雷池',effects:{INT:5,CLN:5}},{text:'绝情离去，明哲保身',effects:{CLN:3}}]},
+{id:'R004',name:'算命先生',age:[20,50],desc:'一个算命先生拦住你，说要为你算一卦。他掐指一算，神色大变："施主命中有一劫，须得小心提防。"',choices:[{text:'花钱消灾，求个心安',effects:{FAM:-5}},{text:'嗤之以鼻，不予理会',effects:{}}]},
+{id:'R005',name:'瘟疫蔓延',age:[25,50],desc:'瘟疫在你家乡蔓延，死者无数。你的家人也受到感染，命悬一线。',choices:[{text:'散尽家财，寻医问药',effects:{FAM:-20,PHY:-5,POP:10}},{text:'隔离自保，听天由命',effects:{POL:5,POP:-10}}]},
+{id:'R006',name:'天降横祸',age:[30,55],desc:'你被人诬告贪腐，遭到朝廷追查。虽然最终洗清嫌疑，但元气大伤。',choices:[{text:'隐忍不发，韬光养晦',effects:{INT:5,POL:10}},{text:'奋起反击，追查真凶',req:{INT:50},effects:{INT:10,yan:-10,qing:10}}]},
+{id:'R007',name:'意外之财',age:[25,45],desc:'你意外获得一笔横财，可以大幅改善生活。但这笔钱的来源有些蹊跷。',choices:[{text:'照单全收，不问出处',effects:{FAM:20,CLN:-10}},{text:'上交官府，明哲保身',effects:{CLN:10,POP:5}},{text:'暗中调查，查明真相',effects:{INT:10}}]},
+{id:'R008',name:'疾病缠身',age:[40,60],desc:'你突然病倒，卧床不起。大夫诊断后说需要静养，否则会有性命之忧。',choices:[{text:'安心静养，保重身体',effects:{PHY:-10,INT:5}},{text:'带病工作，鞠躬尽瘁',effects:{PHY:-20,LOY:10,POP:10}}]},
+{id:'R009',name:'晚年回忆',age:[55,70],desc:'夜深人静，你独坐书房，回忆这一生的点点滴滴。有得有失，有喜有悲。',choices:[{text:'著书立说，流芳百世',effects:{INT:10,POP:10}},{text:'含饴弄孙，颐养天年',effects:{PHY:5}}]},
+{id:'R010',name:'隐士高人',age:[30,50],desc:'你在山中偶遇一位隐士，他曾是朝廷重臣，如今归隐山林。他向你讲述了许多官场秘辛。',choices:[{text:'虚心求教，获益匪浅',effects:{INT:15,POL:10}},{text:'劝其出山，报效朝廷',effects:{LOY:5}}]},
+{id:'R011',name:'救济灾民',age:[28,50],desc:'你所在的地区遭遇旱灾，百姓流离失所。你是否出手相助？',choices:[{text:'开仓放粮，救济灾民',effects:{FAM:-15,POP:20,CLN:10}},{text:'捐资修桥，造福乡里',effects:{FAM:-10,POP:15}},{text:'明哲保身，袖手旁观',effects:{POL:3}}]},
+{id:'R012',name:'官场暗算',age:[32,50],desc:'你在官场上遭到暗算，被人弹劾。幕后黑手是你曾经得罪过的对头。',choices:[{text:'奋起反击，以牙还牙',req:{POL:50},effects:{POL:10,INT:5}},{text:'忍气吞声，韬光养晦',effects:{INT:5,LOY:5}},{text:'辞官归隐，远离是非',effects:{CLN:10,POL:-10}}]}
+],
+endings:[{id:'E01',name:'内阁首辅',condition:function(p){return p.attrs.INT>=80&&p.attrs.POL>=60&&p.factions.qing>=50;},desc:'你位极人臣，成为内阁首辅，辅佐天子治理天下。你推行改革，励精图治，为大明中兴立下汗马功劳。史书记载："公之功业，足以垂范后世。"',points:100},{id:'E02',name:'封疆大吏',condition:function(p){return p.attrs.INT>=60&&p.attrs.POL>=50&&p.attrs.POP>=50;},desc:'你成为一方封疆大吏，治理一方水土。在你的治理下，百姓安居乐业，政通人和。你虽未能位极人臣，但也名留青史。',points:80},{id:'E03',name:'清流砥柱',condition:function(p){return p.attrs.CLN>=70&&p.factions.qing>=40;},desc:'你一生清廉正直，坚守清流立场，成为士林楷模。虽然仕途坎坷，但你的品格受到天下人的敬仰。"人生自古谁无死，留取丹心照汗青。"',points:70},{id:'E04',name:'海瑞悲剧',condition:function(p){return p.attrs.CLN>=80&&p.attrs.POL<=20;},desc:'你像海瑞一样清廉正直，却也像他一样孤独终老。你的一生都在与贪官污吏作斗争，虽然赢得了百姓的爱戴，但也付出了沉重的代价。',points:60},{id:'E05',name:'严党余孽',condition:function(p){return p.factions.yan>=50&&p.attrs.CLN<30;},desc:'你深陷严党泥潭，最终难逃法网。严党覆灭之时，你也被清算入狱。"机关算尽太聪明，反误了卿卿性命。"',points:20},{id:'E06',name:'司礼监掌印',condition:function(p){return p.factions.sili>=50&&p.attrs.LOY>=60;},desc:'你在司礼监步步高升，最终成为掌印太监，权倾朝野。你深谙帝心，为皇帝分忧解难，却也背负了千古骂名。',points:70},{id:'E07',name:'富甲一方',condition:function(p){return p.attrs.FAM>=80;},desc:'你经商有道，富甲一方。虽然未能在仕途上有所建树，但你的财富足以让子孙后代衣食无忧。"人生得意须尽欢，莫使金樽空对月。"',points:50},{id:'E08',name:'归隐田园',condition:function(p){return p.attrs.PHY>=50&&p.attrs.INT>=40&&p.attrs.POL<30;},desc:'你看透了官场的尔虞我诈，选择归隐田园。在山水之间，你找到了内心的平静。"采菊东篱下，悠然见南山。"',points:40},{id:'E09',name:'含冤而死',condition:function(p){return p.attrs.CLN>=50&&p.attrs.POL<=20&&(p.factions.yan<=-20||p.factions.qing<=-20);},desc:'你在官场上遭到暗算，被人诬陷入狱。虽然清白无辜，却难逃一死。"古来圣贤皆寂寞，惟有饮者留其名。"',points:10},{id:'E10',name:'默默无闻',condition:function(p){return true;},desc:'你的一生平淡无奇，既没有大富大贵，也没有大起大落。你在历史的长河中默默无闻，但或许这才是普通人的人生。"人生在世不称意，明朝散发弄扁舟。"',points:30}]};
+let gameState={rebirthPoints:parseInt(localStorage.getItem('rebirthPoints')||'0'),selectedIdentity:null,selectedTalents:[],player:{age:20,attrs:{INT:0,CLN:0,POL:0,POP:0,PHY:0,FAM:0,LOY:0},factions:{yan:0,qing:0,sili:0},talents:[],log:[]},currentEventIndex:0,usedEvents:[]};
+const attrNames={INT:'智谋',CLN:'清廉',POL:'权谋',POP:'民望',PHY:'体魄',FAM:'家世',LOY:'忠诚'};
+const factionNames={yan:'严党',qing:'清流',sili:'司礼监'};
+function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
+function startGame(){showScreen('identityScreen');renderIdentities();}
+function renderIdentities(){const grid=document.getElementById('identityGrid');grid.innerHTML='';GameData.identities.forEach((identity,i)=>{const card=document.createElement('div');card.className='card';card.innerHTML=`<h3>${identity.name}</h3><p>${identity.desc}</p>`;card.onclick=()=>{document.querySelectorAll('#identityGrid .card').forEach(c=>c.classList.remove('selected'));card.classList.add('selected');gameState.selectedIdentity=identity;};grid.appendChild(card);});}
+function confirmIdentity(){if(!gameState.selectedIdentity){alert('请先选择一个身份！');return;}const identity=gameState.selectedIdentity;gameState.player.identity=identity;Object.keys(identity.attrs).forEach(k=>gameState.player.attrs[k]=identity.attrs[k]);Object.keys(identity.factions).forEach(k=>gameState.player.factions[k]=identity.factions[k]);showScreen('talentScreen');rollTalents();}
+function rollTalents(){gameState.selectedTalents=[];const pool=[...GameData.talents];for(let i=0;i<3;i++){const rand=Math.random();let cumProb=0;for(const t of pool){cumProb+=t.prob;if(rand<=cumProb){gameState.selectedTalents.push(t);break;}}if(gameState.selectedTalents.length<=i)gameState.selectedTalents.push(pool[Math.floor(Math.random()*pool.length)]);}renderTalents();}
+function renderTalents(){const list=document.getElementById('talentList');list.innerHTML='';gameState.selectedTalents.forEach(t=>{const tag=document.createElement('span');tag.className=`talent-tag talent-${t.rarity}`;tag.textContent=t.name;tag.title=Object.entries(t.effects).map(([k,v])=>`${attrNames[k]||k}${v>0?'+':''}${v}`).join(', ');list.appendChild(tag);});}
+function refreshTalents(){if(gameState.rebirthPoints<10){alert('重生点数不足！');return;}gameState.rebirthPoints-=10;document.getElementById('rebirthPoints').textContent=gameState.rebirthPoints;localStorage.setItem('rebirthPoints',gameState.rebirthPoints);rollTalents();}
+function confirmTalents(){gameState.player.talents=gameState.selectedTalents;gameState.selectedTalents.forEach(t=>{Object.keys(t.effects).forEach(k=>{if(gameState.player.attrs[k]!==undefined)gameState.player.attrs[k]+=t.effects[k];});if(t.factions)Object.keys(t.factions).forEach(k=>{if(gameState.player.factions[k]!==undefined)gameState.player.factions[k]+=t.factions[k];});});showScreen('gameScreen');updateSidebar();nextEvent();}
+function updateSidebar(){document.getElementById('playerIdentity').textContent=gameState.player.identity.name;document.getElementById('playerAge').textContent=gameState.player.age;let html='';Object.keys(attrNames).forEach(k=>{const val=Math.max(0,Math.min(100,gameState.player.attrs[k]));html+=`<div class="stat-row"><span class="stat-name">${attrNames[k]}</span><div class="stat-bar-container"><div class="stat-bar" style="width:${val}%"></div></div><span class="stat-value">${val}</span></div>`;});document.getElementById('attributesPanel').innerHTML=html;html='';Object.keys(factionNames).forEach(k=>{const val=Math.max(-100,Math.min(100,gameState.player.factions[k]));const displayVal=val>=0?'+'+val:val;const color=val>=0?'#5cb85c':'#d9534f';html+=`<div style="margin-bottom:5px"><span style="color:var(--text-gold)">${factionNames[k]}:</span> <span style="color:${color}">${displayVal}</span></div>`;});document.getElementById('factionsPanel').innerHTML=html;html='';gameState.player.talents.forEach(t=>{html+=`<span class="talent-tag talent-${t.rarity}">${t.name}</span>`;});document.getElementById('talentsPanel').innerHTML=html;}
+function getAvailableEvents(){return GameData.events.filter(e=>{if(gameState.usedEvents.includes(e.id))return false;if(e.age&&(gameState.player.age<e.age[0]||gameState.player.age>e.age[1]))return false;return true;});}
+function nextEvent(){if(gameState.player.age>=70||gameState.player.attrs.PHY<=0){showEnding();return;}const available=getAvailableEvents();if(available.length===0){gameState.player.age+=1;updateSidebar();nextEvent();return;}const event=available[Math.floor(Math.random()*available.length)];gameState.usedEvents.push(event.id);renderEvent(event);}
+function renderEvent(event){const content=document.getElementById('eventContent');let html=`<div class="event-box"><div class="event-title">${event.name}</div><div class="event-desc">${event.desc}</div></div>`;if(event.choices&&event.choices.length>0){event.choices.forEach((choice,i)=>{let disabled=false;let reqText='';if(choice.req){Object.entries(choice.req).forEach(([k,v])=>{const current=gameState.player.attrs[k]||gameState.player.factions[k]||0;if(current<v)disabled=true;reqText+=`需要${attrNames[k]||factionNames[k]||k}≥${v} `;});}let effectText=Object.entries(choice.effects).map(([k,v])=>{const name=attrNames[k]||factionNames[k]||k;return `${name}${v>0?'+':''}${v}`;}).join(' ');html+=`<div class="choice-box ${disabled?'disabled':''}" onclick="${disabled?'':'makeChoice('+i+')'}" data-index="${i}"><div class="choice-title">${choice.text}</div>${reqText?`<div class="choice-requirement">${reqText}</div>`:''}<div class="choice-effect">${effectText||'无特殊效果'}</div></div>`;});content.innerHTML=html;}else{showEnding();}}
+function makeChoice(index){const event=GameData.events.find(e=>e.id===gameState.usedEvents[gameState.usedEvents.length-1]);const choice=event.choices[index];Object.entries(choice.effects).forEach(([k,v])=>{if(gameState.player.attrs[k]!==undefined)gameState.player.attrs[k]=Math.max(0,Math.min(100,gameState.player.attrs[k]+v));else if(gameState.player.factions[k]!==undefined)gameState.player.factions[k]=Math.max(-100,Math.min(100,gameState.player.factions[k]+v));});gameState.player.log.push({age:gameState.player.age,event:event.name,choice:choice.text});gameState.player.age+=Math.floor(Math.random()*3)+1;updateSidebar();nextEvent();}
+function showEnding(){let ending=GameData.endings.find(e=>e.condition(gameState.player));document.getElementById('endingTitle').textContent=ending.name;document.getElementById('endingDesc').textContent=ending.desc;let logHtml='';gameState.player.log.forEach(l=>{logHtml+=`<div class="log-item"><span class="log-age">${l.age}岁</span> - ${l.event}: ${l.choice}</div>`;});document.getElementById('lifeLog').innerHTML=logHtml||'<div class="log-item">平淡的一生...</div>';const earned=ending.points;document.getElementById('earnedPoints').textContent=earned;gameState.rebirthPoints+=earned;localStorage.setItem('rebirthPoints',gameState.rebirthPoints);showScreen('endingScreen');}
+function restartGame(){gameState={rebirthPoints:parseInt(localStorage.getItem('rebirthPoints')||'0'),selectedIdentity:null,selectedTalents:[],player:{age:20,attrs:{INT:0,CLN:0,POL:0,POP:0,PHY:0,FAM:0,LOY:0},factions:{yan:0,qing:0,sili:0},talents:[],log:[]},currentEventIndex:0,usedEvents:[]};document.getElementById('rebirthPoints').textContent=gameState.rebirthPoints;showScreen('startScreen');}
+document.getElementById('rebirthPoints').textContent=gameState.rebirthPoints;
+</script>
+</body>
+</html>
